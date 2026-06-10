@@ -42,7 +42,24 @@ if user_input:
         conversation += f"{role}: {content}\n"
     
     with st.spinner("soch rha hu....."):
-        response = model.generate_content(conversation)
+        
+        system_prompt = """
+        You are an AI Study Assistant.     
+        Rules:
+        You are an AI Study Assistant.
+        Your goal is to help users learn.
+
+        Guidelines:
+        - Adapt explanations to the user's level.
+        - Use examples when helpful.
+        - Use analogies when concepts are difficult.
+        - Be accurate before being simple.
+        - If the user asks for technical depth, provide it.
+
+        """
+        full_prompt = system_prompt + "\n\n" + conversation
+
+        response = model.generate_content(full_prompt)
 
     ai_response = response.text
 
