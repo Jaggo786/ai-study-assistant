@@ -3,6 +3,33 @@ import google.generativeai as genai
 import time
 from dotenv import load_dotenv
 import os
+import json
+from pypdf import PdfReader
+
+uploaded_file = st.file_uploader(
+    "Upload PDF",
+    type=["pdf"]
+)
+if uploaded_file:
+    reader = PdfReader(uploaded_file)
+    st.write("Pages :" ,len(reader.pages))
+    pdf_text = ""
+
+    for page in reader.pages:
+        text = page.extract_text()
+
+        if text:
+            pdf_text += text + "\n\n"
+
+    st.write("Characters:" ,len(pdf_text))
+
+    with open("uploaded_pdf.txt", "w", encoding = "utf-8") as file:
+        file.write(pdf_text)
+
+    st.success("pdf saved successfully")
+
+
+CHAT_FILE = "chat_history.json"
 
 load_dotenv()
 
@@ -15,7 +42,13 @@ model = genai.GenerativeModel("gemini-2.5-flash")
 st.title("AI Study Assistant")
 
 if "messages" not in st.session_state:
-    st.session_state.messages = []
+
+    try:
+        with open(CHAT_FILE, "r") as file:
+            st.session_state.messages = json.load(file)
+
+    except:
+        st.session_state.messages = []
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -31,6 +64,9 @@ if user_input:
             "content": user_input
         }
     )
+
+    with open(CHAT_FILE, "w") as file:
+        json.dump(st.session_state.messages, file)
 
     conversation = ""
 
