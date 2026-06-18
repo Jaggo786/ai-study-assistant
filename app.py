@@ -6,30 +6,7 @@ import os
 import json
 from pypdf import PdfReader
 
-uploaded_file = st.file_uploader(
-    "Upload PDF",
-    type=["pdf"]
-)
-if uploaded_file:
-    reader = PdfReader(uploaded_file)
-    st.write("Pages :" ,len(reader.pages))
-    pdf_text = ""
-
-    for page in reader.pages:
-        text = page.extract_text()
-
-        if text:
-            pdf_text += text + "\n\n"
-
-    st.write("Characters:" ,len(pdf_text))
-
-    with open("uploaded_pdf.txt", "w", encoding = "utf-8") as file:
-        file.write(pdf_text)
-
-    st.success("pdf saved successfully")
-
-
-CHAT_FILE = "chat_history.json"
+st.title("AI Study Assistant")
 
 load_dotenv()
 
@@ -39,7 +16,75 @@ genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-st.title("AI Study Assistant")
+with st.expander("<---- PDF Question Answering ---->"):
+    
+    uploaded_file = st.file_uploader(
+        "Upload PDF",
+        type=["pdf"]
+    )
+
+    if uploaded_file:
+        reader = PdfReader(uploaded_file)
+        st.write("Pages :" ,len(reader.pages))
+        pdf_text = ""
+
+        for page in reader.pages:
+            text = page.extract_text()
+
+            if text:
+                pdf_text += text + "\n\n"
+
+        chunk_size = 500
+
+        chunks = []
+
+        for i in range(0, len(pdf_text), chunk_size):
+            chunk = pdf_text[i:i + chunk_size]
+            chunks.append(chunk)
+        
+        pdf_question = st.text_input(
+            "Ask a question about the pdf"
+        )
+        selected_chunk = ""
+        
+        if pdf_question:
+            question = pdf_question.lower()
+
+            for chunk in chunks:
+                if any(word in chunk.lower() for word in question.split()):
+                    selected_chunk = chunk
+                    break
+            
+        st.write("number of chunks:" , len(chunks))
+        
+        
+
+
+        st.write("Characters:" ,len(pdf_text))
+        
+
+        with open("uploaded_pdf.txt", "w", encoding = "utf-8") as file:
+            file.write(pdf_text)
+
+        st.success("pdf saved successfully")
+        
+        if pdf_question:
+            prompt = f"""
+            Use the following context to answer the question.
+            Context:
+            {selected_chunk}
+            Question:
+            {pdf_question}
+            """
+            response = model.generate_content(prompt)
+            st.write(response.text)
+            
+            
+
+
+
+CHAT_FILE = "chat_history.json"
+
 
 if "messages" not in st.session_state:
 
@@ -101,7 +146,7 @@ if user_input:
 
     st.session_state.messages.append(
         {
-            "role":"assistaant",
+            "role":"assistant",
             "content":ai_response
         }
     )
