@@ -41,43 +41,7 @@ with st.expander("<---- PDF Question Answering ---->"):
         for i in range(0, len(pdf_text), chunk_size):
             chunk = pdf_text[i:i + chunk_size]
             chunks.append(chunk)
-        
-        pdf_question = st.text_input(
-            "Ask a question about the pdf"
-        )
-        selected_chunk = ""
-        
-        if pdf_question:
-            question = pdf_question.lower()
-
-            for chunk in chunks:
-                if any(word in chunk.lower() for word in question.split()):
-                    selected_chunk = chunk
-                    break
-            
-        st.write("number of chunks:" , len(chunks))
-        
-        
-
-
-        st.write("Characters:" ,len(pdf_text))
-        
-
-        with open("uploaded_pdf.txt", "w", encoding = "utf-8") as file:
-            file.write(pdf_text)
-
-        st.success("pdf saved successfully")
-        
-        if pdf_question:
-            prompt = f"""
-            Use the following context to answer the question.
-            Context:
-            {selected_chunk}
-            Question:
-            {pdf_question}
-            """
-            response = model.generate_content(prompt)
-            st.write(response.text)
+        st.write("number of chunks:", len(chunks))
             
             
 
@@ -138,7 +102,19 @@ if user_input:
         - If the user asks for technical depth, provide it.
 
         """
-        full_prompt = system_prompt + "\n\n" + conversation
+        if uploaded_file:
+            full_prompt = f"""
+            {system_prompt}
+
+            PDF Context:
+            {pdf_text}
+
+            Conversation:
+            {conversation}
+            """
+        else:
+            full_prompt = system_prompt + "\n\n" + conversation
+
 
         response = model.generate_content(full_prompt)
 
